@@ -1,39 +1,32 @@
-from models.database_manager import create_connection
+from models.database_manager import write_entry
+from datetime import datetime
 
 def add_entry(name, betrag, datum, kategorie):
-    match validate_entry(name, betrag, datum, kategorie):
+    status, datum = validate_entry(name, betrag, datum, kategorie)
+    match status:
         case 401:
             print("Ungültiger Name:", name)
             return
         case 402:
             print("Ungültiger Betrag:", betrag)
             return
-        case 403:
-            print("Ungültiges Datum:", datum)
-            # get_datum()
         case 200:
             print("Eintrag ist gültig:", name, betrag, datum, kategorie)
+    write_entry(name, betrag, datum, kategorie)
+    
 
-    conn = create_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("INSERT INTO entries (name, betrag, datum, kategorie) VALUES (?, ?, ?, ?)", (name, betrag, datum, kategorie))
-        conn.commit()
-    except Exception as e:
-        print("Fehler beim Einfügen:", e)
-    finally:
-        conn.close()
+def get_current_date():
+    # Gibt das aktuelle Datum im Format YYYY-MM-DD zurück
+    return datetime.now().strftime("%Y-%m-%d")
 
-def get_all_entries():
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM entries")
-    users = cursor.fetchall()
-    conn.close()
-    return users
 
-# Muss noch implementiert werden
-# Diese Funktion soll die Eingaben validieren und entsprechende Fehlercodes zurückgeben
 def validate_entry(name, betrag, datum, kategorie):
     print("Validating entry:", name, betrag, datum, kategorie)
-    return 200
+    if name is None or len(name) == 0:
+        return 401, datum 
+    elif betrag is None or not isinstance(betrag, (int, float)):
+        return 402, datum
+    elif datum is None or len(datum) == 0:
+        datum = get_current_date()
+        print("Datum wurde nicht angegeben, verwende aktuelles Datum:", datum)
+    return 200, datum
