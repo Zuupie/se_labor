@@ -1,6 +1,7 @@
 from models.database_manager import write_entry, write_category, write_balance, category_exists, get_category_budget, get_all_entries
 from datetime import datetime
 from models.state_machine import change_state, get_current_state
+from datetime import datetime
 
 def add_entry(name, betrag, datum, kategorie):
     status, datum = validate_entry(name, betrag, datum, kategorie)
@@ -19,8 +20,21 @@ def add_entry(name, betrag, datum, kategorie):
     # Eintrag ist gültig, also schreibe ihn in die Datenbank
     write_entry(name, betrag, datum, kategorie)
     print(f"Eintrag '{name}' mit Betrag {betrag} am {datum} in Kategorie '{kategorie}' wurde hinzugefügt.")
-    # und aktualisiere die Bilanz für den Monat............
+    # Aktualisiere die Bilanz für den Monat des Eintrags
+    recalculate_balance(datum, betrag)
+
+def recalculate_balance(datum, betrag):
+    # Datum im Format YYYY-MM extrahieren und dafür aus str Datum ein datetime Objekt machen
+    dt = datetime.strptime(datum, "%Y-%m-%d")
+    jahr_monat = dt.strftime("%Y-%m")
     
+    # Alle Einträge für den Monat abrufen
+    entries = get_all_entries()
+    total = sum(entry[2] for entry in entries if entry[3].startswith(jahr_monat))
+
+    # Bilanz schreiben oder aktualisieren
+    write_balance(jahr_monat, total)
+    print(f"Bilanz für {jahr_monat} wurde aktualisiert: {total}")
 
 def get_current_date():
     # Gibt das aktuelle Datum im Format YYYY-MM-DD zurück
