@@ -1,4 +1,4 @@
-from models.database_manager import write_entry
+from models.database_manager import write_entry, write_category, write_balance, category_exists
 from datetime import datetime
 
 def add_entry(name, betrag, datum, kategorie):
@@ -29,4 +29,12 @@ def validate_entry(name, betrag, datum, kategorie):
     elif datum is None or len(datum) == 0:
         datum = get_current_date()
         print("Datum wurde nicht angegeben, verwende aktuelles Datum:", datum)
+
+    if category_exists(kategorie):
+        print("Kategorie 'Essen' existiert.")
+        #Budget ändern
+    else:
+        print("Kategorie 'Essen' wurde nicht gefunden.")
+        #write_category(kategorie)
+
     return 200, datum
