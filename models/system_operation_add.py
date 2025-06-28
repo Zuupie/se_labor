@@ -1,5 +1,6 @@
-from models.database_manager import write_entry, write_category, write_balance, category_exists, get_category_budget
+from models.database_manager import write_entry, write_category, write_balance, category_exists, get_category_budget, get_all_entries
 from datetime import datetime
+from models.state_machine import change_state, get_current_state
 
 def add_entry(name, betrag, datum, kategorie):
     status, datum = validate_entry(name, betrag, datum, kategorie)
@@ -12,9 +13,12 @@ def add_entry(name, betrag, datum, kategorie):
             return
         case 200:
             print("Eintrag ist gültig:", name, betrag, datum, kategorie)
-    #Prüfen auf Zustandswechel...................
+    #Zustandswechsel, falls noch kein Eintrag existiert
+    if get_current_state() == "keinen Eintrag":
+        change_state("Einen Eintrag") 
     # Eintrag ist gültig, also schreibe ihn in die Datenbank
     write_entry(name, betrag, datum, kategorie)
+    print(f"Eintrag '{name}' mit Betrag {betrag} am {datum} in Kategorie '{kategorie}' wurde hinzugefügt.")
     # und aktualisiere die Bilanz für den Monat............
     
 
