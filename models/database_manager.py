@@ -6,6 +6,7 @@ DB_PATH = os.path.join("database", "data.db")
 def create_connection():
     return sqlite3.connect(DB_PATH)
 
+# Schreibt einen Eintrag in die Datenbank
 def write_entry(name, betrag, datum, kategorie):
     conn = create_connection()
     cursor = conn.cursor()
@@ -17,59 +18,24 @@ def write_entry(name, betrag, datum, kategorie):
     finally:
         conn.close()
 
-def write_category(kategorie, budget=0.0):
+# Kategorie mit Budget schreiben oder aktualisieren
+def write_category(kategorie, budget=100.0):
     conn = create_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO category (kategorie, budget) VALUES (?, ?)", (kategorie, budget))
+        cursor.execute("""
+            INSERT INTO category (kategorie, budget) 
+            VALUES (?, ?)
+            ON CONFLICT(kategorie)
+            DO UPDATE SET budget = excluded.budget
+        """, (kategorie, budget))
         conn.commit()
-    except sqlite3.IntegrityError:
-        print(f"Kategorie '{kategorie}' existiert bereits.")
     except Exception as e:
         print("Fehler beim Einfügen der Kategorie:", e)
     finally:
         conn.close()
 
-def category_exists(kategorie):
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM category WHERE kategorie = ?", (kategorie,))
-    result = cursor.fetchone()
-    conn.close()
-    return result is not None
-
-def get_all_entries():
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM entries")
-    entries = cursor.fetchall()
-    conn.close()
-    return entries
-
-def get_all_categories():
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM category")
-    categories = cursor.fetchall()
-    conn.close()
-    return categories
-
-def get_all_balances():
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM balance")
-    balances = cursor.fetchall()
-    conn.close()
-    return balances
-
-def get_balance_by_month(month):
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM balance WHERE monat = ?", (month))
-    balance = cursor.fetchone()
-    conn.close()
-    return balance
-
+# Schreibt oder aktualisiert die Bilanz für einen bestimmten Monat
 def write_balance(monat, bilanz):
     conn = create_connection()
     cursor = conn.cursor()
@@ -87,7 +53,61 @@ def write_balance(monat, bilanz):
     finally:
         conn.close()
 
+# Überprüft, ob eine Kategorie in der Datenbank existiert
+def category_exists(kategorie):
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM category WHERE kategorie = ?", (kategorie,))
+    result = cursor.fetchone()
+    conn.close()
+    return result is not None
 
+def get_category_budget(kategorie):
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT budget FROM category WHERE kategorie = ?", (kategorie,))
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result else None
+
+# Ruft alle Einträge aus der Datenbank ab
+def get_all_entries():
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM entries")
+    entries = cursor.fetchall()
+    conn.close()
+    return entries
+
+# Ruft alle Kategorien aus der Datenbank ab
+def get_all_categories():
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM category")
+    categories = cursor.fetchall()
+    conn.close()
+    return categories
+
+# Ruft alle Bilanzen aus der Datenbank ab
+def get_all_balances():
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM balance")
+    balances = cursor.fetchall()
+    conn.close()
+    return balances
+
+# Ruft die Bilanz für einen bestimmten Monat ab
+def get_balance_by_month(month):
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM balance WHERE monat = ?", (month))
+    balance = cursor.fetchone()
+    conn.close()
+    return balance
+
+
+# Erstellt die Datenbank und die erforderlichen Tabellen
 def setup_database():
     # Bestehende Datenbankdatei löschen (optional)
     if os.path.exists(DB_PATH):
