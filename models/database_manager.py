@@ -17,10 +17,12 @@ def setup_database():
 
     # Neue Tabelle anlegen
     cursor.execute("""
-    CREATE TABLE users (
+    CREATE TABLE entries (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL
+        betrag DOUBLE NOT NULL,
+        datum TEXT NOT NULL,
+        kategorie TEXT NOT NULL
     );
     """)
 
