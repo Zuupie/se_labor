@@ -10,18 +10,22 @@ def create_connection():
 def write_entry(name, betrag, datum, kategorie):
     conn = create_connection()
     cursor = conn.cursor()
+    status = 200
     try:
         cursor.execute("INSERT INTO entries (name, betrag, datum, kategorie) VALUES (?, ?, ?, ?)", (name, betrag, datum, kategorie))
         conn.commit()
     except Exception as e:
         print("Fehler beim Einfügen:", e)
+        status = 405
     finally:
         conn.close()
+        return status
 
 # Kategorie mit Budget schreiben oder aktualisieren
 def write_category(kategorie, budget=100.0):
     conn = create_connection()
     cursor = conn.cursor()
+    status = 200
     try:
         cursor.execute("""
             INSERT INTO category (kategorie, budget) 
@@ -32,13 +36,16 @@ def write_category(kategorie, budget=100.0):
         conn.commit()
     except Exception as e:
         print("Fehler beim Einfügen der Kategorie:", e)
+        status = 405
     finally:
         conn.close()
+        return status
 
 # Schreibt oder aktualisiert die Bilanz für einen bestimmten Monat
 def write_balance(monat, bilanz):
     conn = create_connection()
     cursor = conn.cursor()
+    status = 200
     try:
         cursor.execute("""
             INSERT INTO balance (monat, bilanz)
@@ -50,17 +57,26 @@ def write_balance(monat, bilanz):
         print(f"Bilanz für {monat} wurde geschrieben oder aktualisiert.")
     except Exception as e:
         print("Fehler beim Schreiben der Bilanz:", e)
+        status = 405
     finally:
         conn.close()
+        return status
 
 # Überprüft, ob eine Kategorie in der Datenbank existiert
 def category_exists(kategorie):
     conn = create_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM category WHERE kategorie = ?", (kategorie,))
-    result = cursor.fetchone()
-    conn.close()
-    return result is not None
+    status = 200
+    result = None
+    try:
+        cursor.execute("SELECT 1 FROM category WHERE kategorie = ?", (kategorie,))
+        result = cursor.fetchone()
+    except Exception as e:
+        print("Fehler beim lesen der Kategorie:", e)
+        status = 405
+    finally:
+        conn.close()
+        return status, result is not None
 
 def get_category_budget(kategorie):
     conn = create_connection()
@@ -147,6 +163,11 @@ def setup_database():
     conn.commit()
     conn.close()
     print("Neue Datenbank mit Tabellen wurden erstellt.")
+
+def remove_database():
+    if os.path.exists(DB_PATH):
+        os.remove(DB_PATH)
+        print("Alte Datenbank gelöscht.")
 
 if __name__ == "__main__":
     setup_database()
